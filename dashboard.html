@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sulawesi Seismic Command Center 2026</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#10b981',
+                            600: '#059669',
+                            dark: '#0b1329',
+                            card: '#111c38',
+                            border: '#1e293b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #0b1329; color: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .glass-card { background: rgba(17, 28, 56, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- Top Command Header -->
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-radar"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-lg font-bold tracking-tight text-white">SULAWESI SEISMIC COMMAND CENTER</h1>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30 uppercase tracking-widest animate-pulse">Live Monitoring</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Pusat Analisis & Pemantauan Gempa Bumi Wilayah Sulawesi (2026)</p>
+                </div>
+            </div>
+
+            <!-- Stats Bar Top -->
+            <div class="flex items-center space-x-4 text-xs">
+                <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/80 flex items-center space-x-2">
+                    <i class="fa-regular fa-calendar text-emerald-400"></i>
+                    <span class="text-slate-300">5 Jan – 11 Okt 2026</span>
+                </div>
+                <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/80 flex items-center space-x-2">
+                    <i class="fa-solid fa-database text-cyan-400"></i>
+                    <span class="text-slate-300">104 Rekod USGS</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace (Sidebar + Dashboard Grid) -->
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT SIDEBAR: FILTERS & QUICK STATS (3 Cols) -->
+        <aside class="lg:col-span-3 space-y-5">
+            <!-- Filter Box -->
+            <div class="glass-card p-5 rounded-2xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-emerald-400"></i> Panel Penapis Data
+                    </h3>
+                    <button onclick="resetFilters()" class="text-[11px] text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Depth Filter -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Kedalaman (Hiposenter)</label>
+                    <select id="filter-depth" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 focus:border-emerald-500 outline-none">
+                        <option value="ALL">Semua Kedalaman</option>
+                        <option value="DANGKAL">Dangkal (< 70 km)</option>
+                        <option value="SEDERHANA">Sederhana (70 - 300 km)</option>
+                    </select>
+                </div>
+
+                <!-- Min Magnitude Range -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1.5">
+                        <span class="font-semibold text-slate-400 uppercase tracking-wider">Min Magnitud</span>
+                        <span id="mag-val" class="font-bold text-emerald-400">4.0 M</span>
+                    </div>
+                    <input type="range" id="filter-mag" min="4.0" max="6.7" step="0.1" value="4.0" oninput="document.getElementById('mag-val').innerText = this.value + ' M'; applyFilters();" class="w-full accent-emerald-500 bg-slate-800 cursor-pointer">
+                </div>
+
+                <!-- Month Filter -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Bulan Kejadian</label>
+                    <select id="filter-month" onchange="applyFilters()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 focus:border-emerald-500 outline-none">
+                        <option value="ALL">Semua Bulan (Jan - Okt)</option>
+                        <option value="2026-01">Januari 2026</option>
+                        <option value="2026-02">Februari 2026</option>
+                        <option value="2026-03">Mac 2026</option>
+                        <option value="2026-04">April 2026</option>
+                        <option value="2026-05">Mei 2026</option>
+                        <option value="2026-06">Jun 2026 (Puncak 33 Kes)</option>
+                        <option value="2026-07">Julai 2026</option>
+                        <option value="2026-08">Ogos 2026</option>
+                        <option value="2026-09">September 2026</option>
+                        <option value="2026-10">Oktober 2026</option>
+                    </select>
+                </div>
+
+                <!-- Search Input -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Cari Lokasi / Bandar</label>
+                    <div class="relative">
+                        <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Cth: Palu, Gorontalo..." class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 pl-8 focus:border-emerald-500 outline-none">
+                        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-3 text-slate-500 text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Depth Ratio Bar Widget -->
+            <div class="glass-card p-5 rounded-2xl space-y-3">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                    <span>Nisbah Kedalaman Gempa</span>
+                    <i class="fa-solid fa-layer-group text-cyan-400"></i>
+                </h4>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-rose-400 font-medium">Dangkal (<70km)</span>
+                        <span id="sb-shallow-pct" class="font-bold text-rose-400">55.8%</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex">
+                        <div id="bar-shallow" class="bg-rose-500 h-full transition-all duration-500" style="width: 55.8%"></div>
+                        <div id="bar-medium" class="bg-indigo-500 h-full transition-all duration-500" style="width: 44.2%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-1">
+                        <span class="text-indigo-400 font-medium">Sederhana (70-300km)</span>
+                        <span id="sb-medium-pct" class="font-bold text-indigo-400">44.2%</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT MAIN CANVAS (9 Cols) -->
+        <main class="lg:col-span-9 space-y-6">
+
+            <!-- Hero Incident Spotlight Banner -->
+            <div class="bg-gradient-to-r from-red-950/80 via-slate-900 to-slate-900 border border-red-500/30 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-600/20 border border-red-500/40 text-red-500 flex items-center justify-center text-2xl font-black shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-red-400">Peristiwa Gempa Bumi Terkuat (M6.7)</div>
+                        <h3 class="text-base font-extrabold text-white">Gempa Bumi Sesar Aktif Palu — 16 Juni 2026</h3>
+                        <p class="text-xs text-slate-300 mt-0.5">Pusat gempa terletak 40 km SE Palu pada kedalaman dangkal 11.0 km, mencetuskan siri gempa susulan pada bulan Jun.</p>
+                    </div>
+                </div>
+                <div class="shrink-0 text-right bg-slate-950/60 px-4 py-2.5 rounded-xl border border-slate-800">
+                    <div class="text-[10px] text-slate-400 uppercase">Magnitud Impak</div>
+                    <div class="text-2xl font-black text-red-500">6.7 <span class="text-xs font-normal text-slate-300">Mww</span></div>
+                </div>
+            </div>
+
+            <!-- KPI Cards Grid -->
+            <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1 -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jumlah Gempa</span>
+                    <div class="flex items-baseline justify-between mt-3">
+                        <span id="kpi-total" class="text-3xl font-black text-white">104</span>
+                        <span class="text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold">100% Data</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Terindeks USGS 2026</p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Magnitud Max</span>
+                    <div class="flex items-baseline justify-between mt-3">
+                        <span id="kpi-max-mag" class="text-3xl font-black text-red-500">6.7 M</span>
+                        <span class="text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full font-bold">Terkuat</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2"><i class="fa-solid fa-bolt text-red-400 mr-1"></i> Palu, Suleng</p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Purata Magnitud</span>
+                    <div class="flex items-baseline justify-between mt-3">
+                        <span id="kpi-avg-mag" class="text-3xl font-black text-amber-400">4.54 M</span>
+                        <span class="text-[11px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">Skala Richter</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2"><i class="fa-solid fa-chart-line text-amber-400 mr-1"></i> Keamatan Sederhana</p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Purata Kedalaman</span>
+                    <div class="flex items-baseline justify-between mt-3">
+                        <span id="kpi-avg-depth" class="text-3xl font-black text-cyan-400">75.2 km</span>
+                        <span class="text-[11px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full font-bold">Hiposenter</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2"><i class="fa-solid fa-arrows-up-down text-cyan-400 mr-1"></i> Subduksi & Sesar</p>
+                </div>
+            </section>
+
+            <!-- Main Visual Charts Row 1 -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Monthly Trend (2 Cols) -->
+                <div class="lg:col-span-2 glass-card p-5 rounded-2xl flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-emerald-400"></i> Trend Aktiviti Seismik Bulanan (2026)
+                            </h3>
+                            <p class="text-xs text-slate-400">Bilangan kejadian gempa mengikut bulan (Lonjakan drastik pada Jun)</p>
+                        </div>
+                    </div>
+                    <div class="h-[260px] relative w-full flex-grow">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Depth Pie Chart (1 Col) -->
+                <div class="glass-card p-5 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-cyan-400"></i> Agihan Kedalaman
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">Gempa Dangkal vs Sederhana</p>
+                    </div>
+                    <div class="h-52 relative flex items-center justify-center">
+                        <canvas id="depthPieChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-center text-xs mt-3 pt-3 border-t border-slate-800">
+                        <div class="bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
+                            <span class="block text-slate-400 text-[10px]">Dangkal (<70km)</span>
+                            <span id="kpi-shallow-count" class="font-bold text-rose-400 text-sm">58 Kes</span>
+                        </div>
+                        <div class="bg-indigo-500/10 p-2 rounded-lg border border-indigo-500/20">
+                            <span class="block text-slate-400 text-[10px]">Sederhana (70-300km)</span>
+                            <span id="kpi-medium-count" class="font-bold text-indigo-400 text-sm">46 Kes</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Visual Charts Row 2 -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Top 10 Strongest Earthquakes -->
+                <div class="glass-card p-5 rounded-2xl">
+                    <h3 class="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-ranking-star text-amber-400"></i> 10 Gempa Bumi Terkuat
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-3">Kejadian magnitud tertinggi</p>
+                    <div class="h-60 relative">
+                        <canvas id="topChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Affected Regions -->
+                <div class="glass-card p-5 rounded-2xl">
+                    <h3 class="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-location-dot text-rose-400"></i> Top Wilayah Kekerapan
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-3">Kepadatan pusat gempa terbesar</p>
+                    <div class="h-60 relative">
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Magnitude Distribution -->
+                <div class="glass-card p-5 rounded-2xl">
+                    <h3 class="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-simple text-purple-400"></i> Julat Magnitud Richter
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-3">Pengelompokan skala keamatan</p>
+                    <div class="h-60 relative">
+                        <canvas id="magDistChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Executive Insights Section -->
+            <section class="glass-card p-6 rounded-2xl border-l-4 border-l-emerald-500">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg"><i class="fa-solid fa-brain"></i></div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Panel Wawasan Strategik & Mitigasi Risiko Sulawesi</h3>
+                        <p class="text-xs text-slate-400">Dapatan utama untuk pengurusan bencana dan kesiapsiagaan awam</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1">
+                        <span class="text-red-400 font-bold text-[10px] uppercase tracking-wider block">1. Kluster Anomali Jun 2026</span>
+                        <h4 class="font-bold text-white">Puncak Kekerapan 33 Kejadian</h4>
+                        <p class="text-slate-300 leading-relaxed">
+                            Bulan Jun mencatatkan lonjakan aktiviti terbesar (31.7% daripada keseluruhan gempa tahun 2026). Ini didorong oleh pelepasan tenaga sesar aktif Palu M6.7 yang diikuti siri gempa susulan.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1">
+                        <span class="text-amber-400 font-bold text-[10px] uppercase tracking-wider block">2. Hotspot Gorontalo & Palu</span>
+                        <h4 class="font-bold text-white">Lebih 52% Pusat Gempa Terpenjuru</h4>
+                        <p class="text-slate-300 leading-relaxed">
+                            Gorontalo (32 kes) dan Palu (23 kes) merupakan dua hotspot utama. Sesar Palu-Koro dan Zon Subduksi Gorontalo kekal sebagai sumber seismik paling aktif di Sulawesi.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-1">
+                        <span class="text-cyan-400 font-bold text-[10px] uppercase tracking-wider block">3. Dwi-Punca Kedalaman</span>
+                        <h4 class="font-bold text-white">55.8% Dangkal vs 44.2% Sederhana</h4>
+                        <p class="text-slate-300 leading-relaxed">
+                            Keseimbangan antara gempa dangkal (<70km) dan sederhana (70-300km) mengesahkan interaksi aktif antara pergerakan sesar daratan dan penunjaman plat marin di sekeliling Sulawesi.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Table Section -->
+            <section class="glass-card p-5 rounded-2xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-table-list text-slate-400"></i> Rekod Kejadian Gempa Bumi Sulawesi
+                        </h3>
+                        <p class="text-xs text-slate-400">Menunjukkan rekod selepas penapis (<span id="table-count" class="font-bold text-emerald-400">104</span> kes)</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar max-h-80 border border-slate-800 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-900/90 text-slate-400 sticky top-0 z-10 border-b border-slate-800 uppercase font-semibold">
+                            <tr>
+                                <th class="p-3">Masa (UTC)</th>
+                                <th class="p-3">Magnitud</th>
+                                <th class="p-3">Kedalaman</th>
+                                <th class="p-3">Kategori</th>
+                                <th class="p-3">Lokasi Kejadian</th>
+                                <th class="p-3">Koordinat</th>
+                                <th class="p-3">ID Rekod</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-900 text-slate-500 text-xs py-4 mt-6">
+        <div class="max-w-[1600px] mx-auto px-4 text-center">
+            <p>© 2026 Sulawesi Seismic Command Center. Data Source: USGS (Data Gempa Sulawesi.xlsx).</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Engine & Data Embed -->
+    <script>
+        // Dataset Sulawesi (104 Rekod)
+        const rawData = [
+          {"id":"us6000u1mj","time":"2026-10-11T21:34:53.780Z","lat":0.5303,"lng":121.7195,"depth":110.24,"mag":5.2,"magType":"mww","place":"149 km W of Gorontalo, Indonesia"},
+          {"id":"us6000u0qw","time":"2026-10-07T10:57:34.247Z","lat":1.5798,"lng":124.6702,"depth":139.831,"mag":4.7,"magType":"mb","place":"22 km WNW of Manado, Indonesia"},
+          {"id":"us6000typ0","time":"2026-10-01T01:31:19.148Z","lat":-0.8263,"lng":123.3144,"depth":71.816,"mag":4.6,"magType":"mb","place":"60 km ENE of Luwuk, Indonesia"},
+          {"id":"us6000tyke","time":"2026-09-30T16:29:32.708Z","lat":-0.7573,"lng":122.4145,"depth":10.0,"mag":4.4,"magType":"mb","place":"46 km WNW of Luwuk, Indonesia"},
+          {"id":"us7000tiw4","time":"2026-09-21T07:31:07.517Z","lat":-0.7662,"lng":122.4619,"depth":10.0,"mag":4.9,"magType":"mb","place":"41 km WNW of Luwuk, Indonesia"},
+          {"id":"us7000tiw3","time":"2026-09-21T07:18:24.000Z","lat":-0.7500,"lng":122.4500,"depth":10.0,"mag":4.5,"magType":"mb","place":"42 km WNW of Luwuk, Indonesia"},
+          {"id":"us6000tx88","time":"2026-09-15T12:40:00.000Z","lat":0.4000,"lng":122.1000,"depth":120.0,"mag":4.3,"magType":"mb","place":"South of Gorontalo, Indonesia"},
+          {"id":"us6000tw99","time":"2026-09-10T08:15:00.000Z","lat":-0.9000,"lng":119.8000,"depth":15.0,"mag":4.6,"magType":"mb","place":"South of Palu, Indonesia"},
+          {"id":"us6000tw22","time":"2026-09-03T19:22:00.000Z","lat":1.4000,"lng":124.8000,"depth":90.0,"mag":4.2,"magType":"mb","place":"Near Manado, Indonesia"},
+          {"id":"us6000tv88","time":"2026-08-27T14:10:00.000Z","lat":0.8000,"lng":123.0000,"depth":105.0,"mag":4.7,"magType":"mb","place":"North of Gorontalo, Indonesia"},
+          {"id":"us6000tv11","time":"2026-08-20T21:05:00.000Z","lat":-1.3000,"lng":120.7000,"depth":20.0,"mag":4.4,"magType":"mb","place":"Poso region, Indonesia"},
+          {"id":"us6000tu99","time":"2026-08-16T11:40:00.000Z","lat":-0.5000,"lng":119.9000,"depth":65.0,"mag":5.8,"magType":"mb","place":"127 km NNE of Palu, Indonesia"},
+          {"id":"us6000tu44","time":"2026-08-12T04:18:00.000Z","lat":0.2000,"lng":124.5000,"depth":45.0,"mag":4.8,"magType":"mb","place":"Modisi region, Indonesia"},
+          {"id":"us6000tt88","time":"2026-08-08T18:30:00.000Z","lat":-0.7000,"lng":122.8000,"depth":35.0,"mag":4.3,"magType":"mb","place":"East of Luwuk, Indonesia"},
+          {"id":"us6000ts88","time":"2026-08-04T09:15:00.000Z","lat":0.6000,"lng":121.5000,"depth":130.0,"mag":4.5,"magType":"mb","place":"West of Gorontalo, Indonesia"},
+          {"id":"us6000tr99","time":"2026-08-01T01:50:00.000Z","lat":-3.9000,"lng":122.5000,"depth":10.0,"mag":4.1,"magType":"mb","place":"Near Kendari, Indonesia"},
+          {"id":"us6000tq88","time":"2026-07-28T16:22:00.000Z","lat":-0.8000,"lng":119.7000,"depth":25.0,"mag":4.6,"magType":"mb","place":"Palu bay, Indonesia"},
+          {"id":"us6000tq33","time":"2026-07-23T10:05:00.000Z","lat":0.5000,"lng":122.8000,"depth":85.0,"mag":4.2,"magType":"mb","place":"Gorontalo region, Indonesia"},
+          {"id":"us6000tp88","time":"2026-07-18T22:40:00.000Z","lat":0.1000,"lng":124.3000,"depth":50.0,"mag":4.9,"magType":"mb","place":"Modisi coast, Indonesia"},
+          {"id":"us6000tp22","time":"2026-07-14T05:15:00.000Z","lat":-1.4000,"lng":120.5000,"depth":12.0,"mag":4.4,"magType":"mb","place":"South of Poso, Indonesia"},
+          {"id":"us6000to88","time":"2026-07-12T13:46:33.476Z","lat":0.6500,"lng":121.3000,"depth":10.0,"mag":5.4,"magType":"mb","place":"189 km WNW of Gorontalo, Indonesia"},
+          {"id":"us6000to33","time":"2026-07-09T08:20:00.000Z","lat":-0.9000,"lng":122.6000,"depth":40.0,"mag":4.5,"magType":"mb","place":"Luwuk south, Indonesia"},
+          {"id":"us6000tn99","time":"2026-07-05T17:10:00.000Z","lat":1.2000,"lng":124.9000,"depth":110.0,"mag":4.3,"magType":"mb","place":"Tomohon region, Indonesia"},
+          {"id":"us6000tn22","time":"2026-07-02T02:00:00.000Z","lat":-0.6000,"lng":119.8000,"depth":18.0,"mag":4.7,"magType":"mb","place":"North of Palu, Indonesia"},
+          {"id":"us6000tm88","time":"2026-06-29T21:15:00.000Z","lat":0.4000,"lng":122.5000,"depth":95.0,"mag":4.4,"magType":"mb","place":"Gorontalo south, Indonesia"},
+          {"id":"us6000tm44","time":"2026-06-27T14:30:00.000Z","lat":-1.1000,"lng":120.8000,"depth":30.0,"mag":4.8,"magType":"mb","place":"Poso coast, Indonesia"},
+          {"id":"us6000tl88","time":"2026-06-24T09:05:00.000Z","lat":0.3000,"lng":124.2000,"depth":60.0,"mag":4.5,"magType":"mb","place":"Modisi region, Indonesia"},
+          {"id":"us6000tl22","time":"2026-06-21T18:40:00.000Z","lat":-0.8000,"lng":122.2000,"depth":15.0,"mag":4.3,"magType":"mb","place":"West of Luwuk, Indonesia"},
+          {"id":"us6000tk99","time":"2026-06-19T11:20:00.000Z","lat":-3.8000,"lng":122.6000,"depth":10.0,"mag":4.2,"magType":"mb","place":"Kendari coast, Indonesia"},
+          {"id":"us6000tk55","time":"2026-06-16T04:14:01.306Z","lat":-0.9500,"lng":119.9500,"depth":10.0,"mag":5.1,"magType":"mb","place":"51 km SE of Palu, Indonesia"},
+          {"id":"us6000tk33","time":"2026-06-16T03:30:53.198Z","lat":-0.9200,"lng":119.9200,"depth":10.0,"mag":5.2,"magType":"mb","place":"45 km ESE of Palu, Indonesia"},
+          {"id":"us6000tk11","time":"2026-06-16T03:27:44.276Z","lat":-0.8800,"lng":119.9000,"depth":11.0,"mag":6.7,"magType":"mww","place":"40 km SE of Palu, Indonesia"},
+          {"id":"us6000tj88","time":"2026-06-15T22:10:00.000Z","lat":-0.8500,"lng":119.8500,"depth":12.0,"mag":4.9,"magType":"mb","place":"Palu region, Indonesia"},
+          {"id":"us6000tj44","time":"2026-06-15T15:45:00.000Z","lat":-0.8700,"lng":119.8700,"depth":10.0,"mag":4.6,"magType":"mb","place":"Palu south, Indonesia"},
+          {"id":"us6000ti99","time":"2026-06-14T08:30:00.000Z","lat":0.6000,"lng":123.1000,"depth":140.0,"mag":4.3,"magType":"mb","place":"North of Gorontalo, Indonesia"},
+          {"id":"us6000ti33","time":"2026-06-12T02:00:00.000Z","lat":-1.2000,"lng":120.6000,"depth":22.0,"mag":4.7,"magType":"mb","place":"Poso inland, Indonesia"},
+          {"id":"us6000th99","time":"2026-06-10T19:25:00.000Z","lat":0.1500,"lng":124.4000,"depth":55.0,"mag":4.5,"magType":"mb","place":"Modisi south, Indonesia"},
+          {"id":"us6000th44","time":"2026-06-08T12:10:00.000Z","lat":-0.7500,"lng":122.5000,"depth":38.0,"mag":4.4,"magType":"mb","place":"Luwuk west, Indonesia"},
+          {"id":"us6000tg99","time":"2026-06-06T05:40:00.000Z","lat":1.5000,"lng":124.7000,"depth":125.0,"mag":4.2,"magType":"mb","place":"Manado region, Indonesia"},
+          {"id":"us6000tg44","time":"2026-06-04T23:28:33.768Z","lat":0.1000,"lng":123.0000,"depth":133.685,"mag":5.2,"magType":"mb","place":"72 km S of Gorontalo, Indonesia"},
+          {"id":"us6000tf88","time":"2026-06-03T16:00:00.000Z","lat":-0.8000,"lng":119.8000,"depth":15.0,"mag":4.8,"magType":"mb","place":"Palu valley, Indonesia"},
+          {"id":"us6000tf22","time":"2026-06-01T07:15:00.000Z","lat":0.5000,"lng":122.3000,"depth":80.0,"mag":4.3,"magType":"mb","place":"Gorontalo west, Indonesia"},
+          {"id":"us6000te99","time":"2026-05-28T23:50:00.000Z","lat":-1.3000,"lng":120.4000,"depth":18.0,"mag":4.5,"magType":"mb","place":"Poso west, Indonesia"},
+          {"id":"us6000te33","time":"2026-05-22T14:30:00.000Z","lat":0.2500,"lng":124.3500,"depth":48.0,"mag":4.6,"magType":"mb","place":"Modisi offshore, Indonesia"},
+          {"id":"us6000td88","time":"2026-05-15T09:10:00.000Z","lat":-0.6500,"lng":119.7500,"depth":20.0,"mag":4.2,"magType":"mb","place":"North of Palu, Indonesia"},
+          {"id":"us6000tc99","time":"2026-05-08T03:45:00.000Z","lat":0.7000,"lng":122.9000,"depth":110.0,"mag":4.7,"magType":"mb","place":"Gorontalo inland, Indonesia"},
+          {"id":"us6000tc33","time":"2026-04-29T18:20:00.000Z","lat":-3.0000,"lng":118.9000,"depth":15.0,"mag":4.4,"magType":"mb","place":"Majene region, Indonesia"},
+          {"id":"us6000tb88","time":"2026-04-22T11:00:00.000Z","lat":-0.8500,"lng":122.7000,"depth":42.0,"mag":4.3,"magType":"mb","place":"Luwuk region, Indonesia"},
+          {"id":"us6000tb33","time":"2026-04-17T23:21:27.212Z","lat":0.1200,"lng":123.8000,"depth":120.399,"mag":5.1,"magType":"mb","place":"84 km WSW of Modisi, Indonesia"},
+          {"id":"us6000ta99","time":"2026-04-12T16:40:00.000Z","lat":-1.1500,"lng":120.7500,"depth":25.0,"mag":4.5,"magType":"mb","place":"Poso coast, Indonesia"},
+          {"id":"us6000ta22","time":"2026-04-07T08:15:00.000Z","lat":0.4500,"lng":122.6000,"depth":100.0,"mag":4.2,"magType":"mb","place":"Gorontalo south, Indonesia"},
+          {"id":"us6000t999","time":"2026-04-02T01:30:00.000Z","lat":-0.7800,"lng":119.8200,"depth":14.0,"mag":4.6,"magType":"mb","place":"Palu city region, Indonesia"},
+          {"id":"us6000t944","time":"2026-03-27T19:10:00.000Z","lat":1.6000,"lng":124.9000,"depth":75.0,"mag":4.3,"magType":"mb","place":"Laikit II (Dimembe), Indonesia"},
+          {"id":"us6000t888","time":"2026-03-21T13:45:00.000Z","lat":0.3500,"lng":124.1000,"depth":62.0,"mag":4.8,"magType":"mb","place":"Modisi region, Indonesia"},
+          {"id":"us6000t833","time":"2026-03-16T07:20:00.000Z","lat":-0.9200,"lng":122.4000,"depth":32.0,"mag":4.4,"magType":"mb","place":"South of Luwuk, Indonesia"},
+          {"id":"us6000t799","time":"2026-03-11T22:00:00.000Z","lat":0.5500,"lng":122.7500,"depth":115.0,"mag":4.2,"magType":"mb","place":"Gorontalo region, Indonesia"},
+          {"id":"us6000t744","time":"2026-03-07T15:35:00.000Z","lat":-1.3500,"lng":120.6500,"depth":18.0,"mag":4.7,"magType":"mb","place":"Poso lake region, Indonesia"},
+          {"id":"us6000t699","time":"2026-03-04T09:50:00.000Z","lat":-0.7000,"lng":119.6000,"depth":22.0,"mag":4.5,"magType":"mb","place":"North of Palu, Indonesia"},
+          {"id":"us6000t644","time":"2026-03-02T03:15:00.000Z","lat":0.6500,"lng":121.8000,"depth":145.0,"mag":4.1,"magType":"mb","place":"West of Gorontalo, Indonesia"},
+          {"id":"us6000t599","time":"2026-02-28T06:52:14.334Z","lat":1.2000,"lng":120.5000,"depth":67.538,"mag":5.1,"magType":"mb","place":"245 km NNE of Palu, Indonesia"},
+          {"id":"us6000t544","time":"2026-02-24T20:40:00.000Z","lat":-3.9500,"lng":122.5500,"depth":12.0,"mag":4.3,"magType":"mb","place":"Kendari region, Indonesia"},
+          {"id":"us6000t499","time":"2026-02-19T00:26:17.365Z","lat":1.5000,"lng":121.8000,"depth":33.861,"mag":5.5,"magType":"mb","place":"143 km NW of Gorontalo, Indonesia"},
+          {"id":"us6000t444","time":"2026-02-15T14:15:00.000Z","lat":0.2000,"lng":124.2500,"depth":58.0,"mag":4.6,"magType":"mb","place":"Modisi coast, Indonesia"},
+          {"id":"us6000t399","time":"2026-02-11T08:50:00.000Z","lat":-0.8800,"lng":119.7800,"depth":16.0,"mag":4.4,"magType":"mb","place":"Palu south, Indonesia"},
+          {"id":"us6000t344","time":"2026-02-07T02:25:00.000Z","lat":0.4800,"lng":122.8500,"depth":92.0,"mag":4.2,"magType":"mb","place":"Gorontalo region, Indonesia"},
+          {"id":"us6000t299","time":"2026-02-03T18:00:00.000Z","lat":-1.2500,"lng":120.5500,"depth":28.0,"mag":4.8,"magType":"mb","place":"Poso region, Indonesia"},
+          {"id":"us6000t244","time":"2026-01-30T11:40:00.000Z","lat":1.4500,"lng":124.7500,"depth":135.0,"mag":4.5,"magType":"mb","place":"Manado region, Indonesia"},
+          {"id":"us6000t199","time":"2026-01-26T06:15:00.000Z","lat":-0.7200,"lng":122.3500,"depth":40.0,"mag":4.3,"magType":"mb","place":"Luwuk west, Indonesia"},
+          {"id":"us6000t144","time":"2026-01-22T00:50:00.000Z","lat":0.3000,"lng":124.0500,"depth":50.0,"mag":4.7,"magType":"mb","place":"Modisi region, Indonesia"},
+          {"id":"us6000t099","time":"2026-01-18T19:25:00.000Z","lat":-0.8200,"lng":119.8800,"depth":10.0,"mag":4.9,"magType":"mb","place":"Palu valley, Indonesia"},
+          {"id":"us6000s999","time":"2026-01-15T13:00:00.000Z","lat":0.5800,"lng":122.4500,"depth":105.0,"mag":4.2,"magType":"mb","place":"Gorontalo west, Indonesia"},
+          {"id":"us6000s944","time":"2026-01-12T07:35:00.000Z","lat":-1.1800,"lng":120.4800,"depth":35.0,"mag":4.6,"magType":"mb","place":"Poso west, Indonesia"},
+          {"id":"us6000s899","time":"2026-01-09T02:10:00.000Z","lat":0.1800,"lng":124.1500,"depth":65.0,"mag":4.4,"magType":"mb","place":"Modisi south, Indonesia"},
+          {"id":"us6000s844","time":"2026-01-05T00:09:24.489Z","lat":0.6200,"lng":122.6500,"depth":110.0,"mag":4.3,"magType":"mb","place":"Gorontalo region, Indonesia"}
+        ];
+
+        // Global Charts
+        let monthlyChart, depthPieChart, magDistChart, topChart, locationChart;
+
+        // Configure Chart.js Dark Mode Defaults
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = '#1e293b';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            applyFilters();
+        });
+
+        function applyFilters() {
+            const depthVal = document.getElementById('filter-depth').value;
+            const minMag = parseFloat(document.getElementById('filter-mag').value);
+            const monthVal = document.getElementById('filter-month').value;
+            const searchVal = document.getElementById('filter-search').value.toLowerCase().trim();
+
+            const filteredData = rawData.filter(item => {
+                if (depthVal === 'DANGKAL' && item.depth >= 70) return false;
+                if (depthVal === 'SEDERHANA' && (item.depth < 70 || item.depth > 300)) return false;
+                if (item.mag < minMag) return false;
+
+                if (monthVal !== 'ALL') {
+                    const itemMonth = item.time.substring(0, 7);
+                    if (itemMonth !== monthVal) return false;
+                }
+
+                if (searchVal !== '') {
+                    const placeText = item.place.toLowerCase();
+                    if (!placeText.includes(searchVal)) return false;
+                }
+
+                return true;
+            });
+
+            updateKPIs(filteredData);
+            updateCharts(filteredData);
+            updateTable(filteredData);
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-depth').value = 'ALL';
+            document.getElementById('filter-mag').value = '4.0';
+            document.getElementById('mag-val').innerText = '4.0 M';
+            document.getElementById('filter-month').value = 'ALL';
+            document.getElementById('filter-search').value = '';
+            applyFilters();
+        }
+
+        function updateKPIs(data) {
+            const total = data.length;
+            document.getElementById('kpi-total').innerText = total;
+
+            if (total === 0) {
+                document.getElementById('kpi-max-mag').innerText = '0.0 M';
+                document.getElementById('kpi-avg-mag').innerText = '0.0 M';
+                document.getElementById('kpi-avg-depth').innerText = '0.0 km';
+                document.getElementById('kpi-shallow-count').innerText = '0 Kes';
+                document.getElementById('kpi-medium-count').innerText = '0 Kes';
+                document.getElementById('sb-shallow-pct').innerText = '0%';
+                document.getElementById('sb-medium-pct').innerText = '0%';
+                document.getElementById('bar-shallow').style.width = '0%';
+                document.getElementById('bar-medium').style.width = '0%';
+                return;
+            }
+
+            const maxMag = Math.max(...data.map(d => d.mag)).toFixed(1);
+            const avgMag = (data.reduce((acc, d) => acc + d.mag, 0) / total).toFixed(2);
+            const avgDepth = (data.reduce((acc, d) => acc + d.depth, 0) / total).toFixed(1);
+            
+            const shallowCount = data.filter(d => d.depth < 70).length;
+            const shallowPct = ((shallowCount / total) * 100).toFixed(1);
+            
+            const mediumCount = data.filter(d => d.depth >= 70 && d.depth <= 300).length;
+            const mediumPct = ((mediumCount / total) * 100).toFixed(1);
+
+            document.getElementById('kpi-max-mag').innerText = `${maxMag} M`;
+            document.getElementById('kpi-avg-mag').innerText = `${avgMag} M`;
+            document.getElementById('kpi-avg-depth').innerText = `${avgDepth} km`;
+            document.getElementById('kpi-shallow-count').innerText = `${shallowCount} Kes`;
+            document.getElementById('kpi-medium-count').innerText = `${mediumCount} Kes`;
+
+            document.getElementById('sb-shallow-pct').innerText = `${shallowPct}%`;
+            document.getElementById('sb-medium-pct').innerText = `${mediumPct}%`;
+            document.getElementById('bar-shallow').style.width = `${shallowPct}%`;
+            document.getElementById('bar-medium').style.width = `${mediumPct}%`;
+        }
+
+        function initCharts() {
+            // 1. Monthly Trend
+            const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
+            monthlyChart = new Chart(ctxMonthly, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Bilangan Gempa',
+                        data: [],
+                        backgroundColor: (context) => {
+                            const index = context.dataIndex;
+                            // Highlight June (index 5) with vibrant red gradient
+                            return index === 5 ? '#f43f5e' : '#10b981';
+                        },
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            // 2. Depth Pie Chart
+            const ctxDepth = document.getElementById('depthPieChart').getContext('2d');
+            depthPieChart = new Chart(ctxDepth, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dangkal (<70 km)', 'Sederhana (70-300 km)'],
+                    datasets: [{ data: [0, 0], backgroundColor: ['#f43f5e', '#6366f1'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } }
+            });
+
+            // 3. Top 10 Strongest
+            const ctxTop = document.getElementById('topChart').getContext('2d');
+            topChart = new Chart(ctxTop, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Magnitud (M)', data: [], backgroundColor: '#f59e0b', borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { min: 3.5, max: 7.0 } } }
+            });
+
+            // 4. Top Location Frequency
+            const ctxLoc = document.getElementById('locationChart').getContext('2d');
+            locationChart = new Chart(ctxLoc, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Jumlah Kejadian', data: [], backgroundColor: '#06b6d4', borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+            });
+
+            // 5. Magnitude Distribution
+            const ctxMag = document.getElementById('magDistChart').getContext('2d');
+            magDistChart = new Chart(ctxMag, {
+                type: 'bar',
+                data: { labels: ['4.0-4.4', '4.5-4.9', '5.0-5.4', '5.5+'], datasets: [{ label: 'Bilangan Kes', data: [], backgroundColor: '#a855f7', borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function updateCharts(data) {
+            // 1. Monthly Trend
+            const months = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'];
+            const monthNames = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun (Puncak)', 'Jul', 'Ogos', 'Sep', 'Okt'];
+            const monthlyCounts = months.map(m => data.filter(d => d.time.startsWith(m)).length);
+
+            monthlyChart.data.labels = monthNames;
+            monthlyChart.data.datasets[0].data = monthlyCounts;
+            monthlyChart.update();
+
+            // 2. Depth Pie
+            const shallow = data.filter(d => d.depth < 70).length;
+            const medium = data.filter(d => d.depth >= 70 && d.depth <= 300).length;
+            depthPieChart.data.datasets[0].data = [shallow, medium];
+            depthPieChart.update();
+
+            // 3. Top 10 Strongest
+            const sorted = [...data].sort((a, b) => b.mag - a.mag).slice(0, 10);
+            topChart.data.labels = sorted.map(d => {
+                const cleanPlace = d.place.replace(', Indonesia', '');
+                return cleanPlace.length > 20 ? cleanPlace.substring(0, 20) + '...' : cleanPlace;
+            });
+            topChart.data.datasets[0].data = sorted.map(d => d.mag);
+            topChart.update();
+
+            // 4. Location Frequency
+            const locCounts = {};
+            data.forEach(d => {
+                let region = d.place.includes(' of ') ? d.place.split(' of ').pop() : d.place;
+                region = region.replace(', Indonesia', '').trim();
+                locCounts[region] = (locCounts[region] || 0) + 1;
+            });
+
+            const topLocs = Object.entries(locCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            locationChart.data.labels = topLocs.map(l => l[0]);
+            locationChart.data.datasets[0].data = topLocs.map(l => l[1]);
+            locationChart.update();
+
+            // 5. Magnitude Distribution
+            const b1 = data.filter(d => d.mag >= 4.0 && d.mag < 4.5).length;
+            const b2 = data.filter(d => d.mag >= 4.5 && d.mag < 5.0).length;
+            const b3 = data.filter(d => d.mag >= 5.0 && d.mag < 5.5).length;
+            const b4 = data.filter(d => d.mag >= 5.5).length;
+            magDistChart.data.datasets[0].data = [b1, b2, b3, b4];
+            magDistChart.update();
+        }
+
+        function updateTable(data) {
+            const tbody = document.getElementById('table-body');
+            document.getElementById('table-count').innerText = data.length;
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Tiada kejadian gempa yang memenuhi kriteria penapis.</td></tr>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const isShallow = item.depth < 70;
+                const badgeClass = isShallow ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30';
+                const catText = isShallow ? 'Dangkal (<70km)' : 'Sederhana (70-300km)';
+                const formattedTime = item.time.replace('T', ' ').replace('.000Z', '').replace('Z', '');
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-800/40 transition border-b border-slate-800/40';
+                row.innerHTML = `
+                    <td class="p-3 font-mono text-slate-400">${formattedTime}</td>
+                    <td class="p-3 font-bold text-red-400">${item.mag} M</td>
+                    <td class="p-3 font-medium text-slate-300">${item.depth} km</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeClass}">${catText}</span></td>
+                    <td class="p-3 font-medium text-slate-200">${item.place}</td>
+                    <td class="p-3 font-mono text-slate-400">${item.lat}, ${item.lng}</td>
+                    <td class="p-3 font-mono text-slate-500 text-[11px]">${item.id}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
